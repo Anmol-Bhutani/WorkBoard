@@ -15,7 +15,23 @@ const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    // Allow localhost (any port) and any railway.app subdomain
+    if (
+      origin.includes('localhost') ||
+      origin.includes('railway.app') ||
+      origin.includes('up.railway.app')
+    ) {
+      return callback(null, true);
+    }
+    // Also allow the explicit FRONTEND_URL if set
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json());
